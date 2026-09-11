@@ -26,6 +26,7 @@ models:
     gold:
       +materialized: table
       +schema: gold
+      +grants:
+        select: ['bi_analyst_role']
       ephemeral:
         +materialized: ephemeral
-

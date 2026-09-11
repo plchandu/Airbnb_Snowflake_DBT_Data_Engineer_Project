@@ -1,3 +1,7 @@
+{{ config(
+    post_hook="ALTER TABLE {{ this }} MODIFY COLUMN HOST_NAME SET MASKING POLICY AIRBNB.GOLD.HIDE_PII_STRING;"
+) }}
+
 {% set congigs = [
     {
         "table" : ref('silver_bookings'),
