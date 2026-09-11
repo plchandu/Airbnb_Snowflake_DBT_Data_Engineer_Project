@@ -1,17 +1,37 @@
-CREATE OR REPLACE FILE FORMAT IF NOT EXISTS csv_format
+USE DATABASE AIRBNB;
+USE SCHEMA STAGING;
+
+-- 1. Create File Format for CSV files
+CREATE OR REPLACE FILE FORMAT csv_format
   TYPE = 'CSV' 
   FIELD_DELIMITER = ','
   SKIP_HEADER = 1
   ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE;
 
-
+-- 2. Create External Stage pointing to your S3 bucket
 CREATE OR REPLACE STAGE snowstage
-FILE_FORMAT = csv_format
-URL='your_s3_bucket_path';
-    
+  FILE_FORMAT = csv_format
+  URL = 's3://airbnb-dbt-snowflake-975829620793/source/'
+  CREDENTIALS = (AWS_KEY_ID = 'YOUR_AWS_ACCESS_KEY_ID', AWS_SECRET_KEY = 'YOUR_AWS_SECRET_ACCESS_KEY');
 
-COPY INTO <your_table_name>
-FRoM @snowstage
-FILES=('your_file_name.csv')
-CREDENTIALS=(aws_key_id = 'yourkey', aws_secret_key = 'yoursecretkey');
+-- 3. Ingest Data into HOSTS table
+COPY INTO AIRBNB.STAGING.HOSTS
+FROM @snowstage
+FILES = ('hosts.csv');
 
+-- 4. Ingest Data into LISTINGS table
+COPY INTO AIRBNB.STAGING.LISTINGS
+FROM @snowstage
+FILES = ('listings.csv');
+
+-- 5. Ingest Data into BOOKINGS table
+COPY INTO AIRBNB.STAGING.BOOKINGS
+FROM @snowstage
+FILES = ('bookings.csv');
+
+-- 6. Verify row counts in Staging
+SELECT 'HOSTS' AS TABLE_NAME, COUNT(*) AS ROW_COUNT FROM AIRBNB.STAGING.HOSTS
+UNION ALL
+SELECT 'LISTINGS', COUNT(*) FROM AIRBNB.STAGING.LISTINGS
+UNION ALL
+SELECT 'BOOKINGS', COUNT(*) FROM AIRBNB.STAGING.BOOKINGS;
